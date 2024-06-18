@@ -1,8 +1,10 @@
+import os
 from datetime import datetime
+from dotenv import load_dotenv
 import requests
 
-
-
+load_dotenv()
+CLICKUP_API_KEY = os.getenv('CLICK_UP_API_KEY')
 
 class WebHookServices:
     def get_update_value(self, field, history_item):
@@ -29,15 +31,15 @@ class WebHookServices:
         url = f"https://api.clickup.com/api/v2/task/{task_id}"
 
         headers = {
-        'Authorization': 'pk_74411095_8383WZWCXRGCTHS3ZHWSQQC4X65SRQO9'
+        'Authorization': CLICKUP_API_KEY
         }
 
         response = requests.request("GET", url, headers=headers, data={})
         if response.status_code == 200:
             api_response = response.json()
-            # print(api_response)
-            print(type(api_response))
-            # return 1
+            # # print(api_response)
+            # print(type(api_response))
+            # # return 1
         
             name = api_response.get("name", "")
             due_date = api_response.get("due_date", "")
@@ -86,6 +88,9 @@ class WebHookServices:
                 "task_id": task_id
             }
             current = self.get_task_details(task_id=task_id)
-            return activity, current
+            return {
+                'activity': activity,
+                'current': current
+            }
 
     
