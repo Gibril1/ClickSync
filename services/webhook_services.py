@@ -5,7 +5,7 @@ import requests
 
 from services.mongo_crud_service import MongoDBCRUDService
 task_activities = MongoDBCRUDService("task_activities")
-
+events = MongoDBCRUDService("events")
 
 load_dotenv()
 CLICKUP_API_KEY = os.getenv('CLICK_UP_API_KEY')
@@ -49,10 +49,8 @@ class WebHookServices:
         response = requests.request("GET", url, headers=headers, data={})
         if response.status_code == 200:
             api_response = response.json()
-            # # print(api_response)
-            # print(type(api_response))
-            # # return 1
-        
+            
+            # get the needed fields
             name = api_response.get("name", "")
             due_date = api_response.get("due_date", "")
             project = api_response.get("project", {}).get("name", "")
@@ -81,13 +79,23 @@ class WebHookServices:
         event = webhook_event["event"]
         date = self.convert_timestamp(history_item["date"])
         update_by = history_item["user"]["email"]
+        event_id = webhook_event["history_items"][0]["id"]
+
+        # check if this event has already happened
+        event_object = await self.find_event(event_id=event_id)
+        if event_object:
+            return 1
+        
+        # add the new event
+        await self.add_events_to_database(event_id=event_id)
+        
 
         # get the real update of what happened
         update = self.get_update_value(field, history_item)
 
         # structure the task activity
         if update is not None:
-            activity = {
+            new_activity = {
                 "update_by": update_by,
                 "date": date,
                 "update": {
@@ -99,22 +107,42 @@ class WebHookServices:
 
             # check if the task already exists in the database
             task = await self.check_if_task_exists(task_id=task_id)
-            if task:
+            if task is not None:
+                activities = task["activities"]
+                
+                for activity in activities:
+                    if activity["update"] == new_activity["update"]:
+                        return
                 # append the new activity to it
-                updated_task = await task_activities.append_data_to_item(task_id, activity)
+                updated_task = await task_activities.append_data_to_item(task_id, new_activity)
                 return updated_task
-            else:
-                current = self.get_task_details(task_id=task_id)
+            # elif task is None:
+            current = self.get_task_details(task_id=task_id)
 
-                new_updates = {
-                    "task_id": task_id,
-                    "last_updated": date,
-                    'activities': [activity],
-                    'current': current
-                }
+            new_updates = {
+                "task_id": task_id,
+                "last_updated": date,
+                'activities': [new_activity],
+                'current': current
+            }
 
-                new_task = await self.add_task_activities(data=new_updates)
-                return new_task
+            new_task = await self.add_task_activities(data=new_updates)
+            return new_task
+    
+    # add events to the database
+    async def add_events_to_database(self, event_id:str):
+        try:
+            event = {
+                "event_id": event_id
+            }
+            return await events.create_item(event)
+        except Exception as e:
+            return
+    
+    # check if that event exists in the database
+    async def find_event(self, event_id:str):
+        return await events.get_item(event_id, "event_id")
+
 
 
     
