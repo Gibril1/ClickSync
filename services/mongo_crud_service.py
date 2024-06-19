@@ -256,3 +256,17 @@ class MongoDBCRUDService:
         except Exception as e:
             logging.error(f"Error cloning collection: {str(e)}")
             raise HTTPException(status_code=500, detail="Error cloning collection")
+        
+    async def append_data_to_item(self, id: str, data):
+        try:
+            db = await get_database()
+            updated_item = await db[self.model].find_one_and_update(
+                {'task_id': id},
+                {'$push': {'activities': data}},
+                projection={'_id': False},
+                return_document=True  # This ensures the updated document is returned
+            )
+            return updated_item
+        except Exception as e:
+            logging.error(f"Error appending new activity: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error appending new activity")
