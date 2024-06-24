@@ -3,13 +3,14 @@ import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 import logging
 from dotenv import load_dotenv
+from config import env_variables
 
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
-DATABASE_URL = os.getenv("MONGODB_URL")
-DATABASE_NAME = os.getenv("MONGODB_NAME")
+DATABASE_URL = env_variables.get("DATABASE_URL")
+DATABASE_NAME = env_variables.get("DATABASE_NAME")
 
 class Database:
     client: AsyncIOMotorClient = None

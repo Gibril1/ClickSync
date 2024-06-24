@@ -4,13 +4,13 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 import requests
-import time
+from config import env_variables
 from fastapi import HTTPException
 from dotenv import load_dotenv
 
 load_dotenv()
-CLICKUP_API_KEY = os.getenv("RGT_CLICKUP_API_KEY")
-CLICKUP_TEAM_ID = os.getenv("RGT_TEAM_ID")
+CLICKUP_API_KEY = env_variables.get("CLICKUP_API_KEY")
+CLICKUP_TEAM_ID = env_variables.get("TEAM_ID")
 
 logger = logging.getLogger(__name__)
 
