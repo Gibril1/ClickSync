@@ -270,3 +270,21 @@ class MongoDBCRUDService:
         except Exception as e:
             logging.error(f"Error appending new activity: {str(e)}")
             raise HTTPException(status_code=500, detail="Error appending new activity")
+    
+    async def new_update_specific_field(
+        self, item_id: str, field_name: str, field_value: dict
+    ):
+        try:
+            db = await get_database()
+            result = await db[self.model].find_one_and_update(
+                {"id": item_id},
+                {"$set": {field_name: field_value}},
+                # upsert=True,
+            )
+
+            updated_item = await db[self.model].find_one({"id": item_id})
+            return {"updated_item": updated_item, "result": result}
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error updating field: {e}")

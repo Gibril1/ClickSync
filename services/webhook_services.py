@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from pymongo.errors import DuplicateKeyError
 from dotenv import load_dotenv
 import requests
 
@@ -35,7 +36,9 @@ class WebHookServices:
             return history_item.get("after")
         return None
     
-    def convert_timestamp(self, timestamp):
+    def convert_timestamp(self, timestamp:str):
+        if not timestamp:
+            return None
         convertible_timeformat = int(timestamp) / 1000
         return datetime.fromtimestamp(convertible_timeformat)
     
